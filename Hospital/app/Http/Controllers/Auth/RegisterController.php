@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Medico;
+use App\Models\Paciente;
+use App\Models\Admin;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
@@ -25,10 +29,25 @@ class RegisterController extends Controller
 
     /**
      * Where to redirect users after registration.
-     *
-     * @var string
      */
-    protected $redirectTo = '/home';
+    protected function redirectTo(): string
+    {
+        $user = auth()->user();
+
+        if ($user && $user->role === 'medico' && $user->medico) {
+            return route('medicos.edit', $user->medico->id);
+        }
+
+        if ($user && $user->role === 'paciente' && $user->paciente) {
+            return route('pacientes.edit', $user->paciente->id);
+        }
+
+        if ($user && $user->role === 'admin' && $user->admin) {
+            return route('admins.edit', $user->admin->id);
+        }
+
+        return '/home';
+    }
 
     /**
      * Create a new controller instance.
@@ -52,6 +71,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role' => ['required', 'in:admin,medico,paciente'],
         ]);
     }
 
@@ -63,10 +83,39 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        return DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role' => $data['role'],
+            ]);
+
+            if ($data['role'] === 'medico') {
+                Medico::create([
+                    'user_id' => $user->id,
+                    'crm' => null,
+                    'especialidade' => null,
+                ]);
+            }
+
+            if ($data['role'] === 'paciente') {
+                Paciente::create([
+                    'user_id' => $user->id,
+                    'cpf' => null,
+                    'data_nascimento' => null,
+                ]);
+            }
+
+            if ($data['role'] === 'admin') {
+                Admin::create([
+                    'user_id' => $user->id,
+                    'cargo' => null,
+                    'setor' => null,
+                ]);
+            }
+
+            return $user;
+        });
     }
 }
