@@ -41,7 +41,7 @@ class AdminController extends Controller
             'observacoes' => 'nullable|string',
         ]);
 
-        // Criar usuário
+        // Create user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -49,7 +49,7 @@ class AdminController extends Controller
             'role' => 'admin',
         ]);
 
-        // Criar admin
+        // Create admin
         Admin::create([
             'user_id' => $user->id,
             'cargo' => $request->cargo,
@@ -59,7 +59,7 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admins.index')
-            ->with('success', 'Administrador cadastrado com sucesso!');
+            ->with('success', 'Administrator created successfully!');
     }
 
     /**
@@ -96,13 +96,13 @@ class AdminController extends Controller
             'observacoes' => 'nullable|string',
         ]);
 
-        // Atualizar usuário
+        // Update user
         $admin->user->update([
             'name' => $request->name,
             'email' => $request->email,
         ]);
 
-        // Atualizar senha se fornecida
+        // Update password if provided
         if ($request->filled('password')) {
             $request->validate(['password' => 'string|min:8|confirmed']);
             $admin->user->update([
@@ -110,7 +110,7 @@ class AdminController extends Controller
             ]);
         }
 
-        // Atualizar admin
+        // Update admin
         $admin->update([
             'cargo' => $request->cargo,
             'setor' => $request->setor,
