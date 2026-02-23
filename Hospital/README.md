@@ -39,8 +39,14 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### Passo 2: Executar as Migrations
+### Passo 2: Installar composer e Executar as Migrations
 Abra o **PowerShell/CMD** na pasta do projeto e execute:
+
+```bash
+composer install
+```
+
+---
 
 ```bash
 php artisan migrate
