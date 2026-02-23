@@ -56,12 +56,32 @@
 
                         <div class="mb-3">
                             <label for="especialidade" class="form-label">Especialidade</label>
-                            <input type="text" class="form-control @error('especialidade') is-invalid @enderror" 
-                                   id="especialidade" name="especialidade" value="{{ old('especialidade', $medico->especialidade) }}" required>
+                            <select class="form-select @error('especialidade') is-invalid @enderror"
+                                    id="especialidade" name="especialidade" required>
+                                @php($especialidadeSelecionada = old('especialidade', $medico->especialidade ?? $especialidadePadrao))
+                                @foreach($especialidades as $especialidade)
+                                    <option value="{{ $especialidade }}" {{ $especialidadeSelecionada === $especialidade ? 'selected' : '' }}>
+                                        {{ $especialidade }}
+                                    </option>
+                                @endforeach
+                            </select>
                             @error('especialidade')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <div class="mb-3">
+                                <label for="nova_especialidade" class="form-label">Adicionar nova especialidade (apenas ADM)</label>
+                                <input type="text" class="form-control @error('nova_especialidade') is-invalid @enderror"
+                                       id="nova_especialidade" name="nova_especialidade" value="{{ old('nova_especialidade') }}"
+                                       placeholder="Ex.: Medicina do Trabalho">
+                                <div class="form-text">A nova especialidade deve seguir o padrão das demais já existentes (inicial maiúscula e apenas letras/espaços).</div>
+                                @error('nova_especialidade')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
 
                         <div class="mb-3">
                             <label for="telefone" class="form-label">Telefone</label>

@@ -40,25 +40,6 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="role" class="col-md-4 col-form-label text-md-end">{{ __('Perfil') }}</label>
-
-                            <div class="col-md-6">
-                                <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
-                                    <option value="">Selecione...</option>
-                                    <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                    <option value="medico" {{ old('role') == 'medico' ? 'selected' : '' }}>Médico</option>
-                                    <option value="paciente" {{ old('role') == 'paciente' ? 'selected' : '' }}>Paciente</option>
-                                </select>
-
-                                @error('role')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
 
                             <div class="col-md-6">

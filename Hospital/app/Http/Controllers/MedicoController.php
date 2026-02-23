@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+ use App\Models\MedicalSpecialty;
 use App\Models\Medico;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MedicoController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource(medical).
+     * Exibe uma lista de médicos cadastrados.
      */
     public function index()
     {
@@ -19,24 +23,39 @@ class MedicoController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new resource(medical).
+     *  Exibe o formulário para cadastrar um novo médico.
      */
     public function create()
     {
-        return view('medicos.create');
+        $especialidades = $this->getEspecialidades();
+        $especialidadePadrao = $this->getEspecialidadePadrao();
+
+        return view('medicos.create', compact('especialidades', 'especialidadePadrao'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created resource in storage(medical).
+     * Processa o formulário de criação de médico e salva os dados no banco.
      */
     public function store(Request $request)
     {
+        $especialidades = $this->getEspecialidades();
+        $novaEspecialidade = null;
+
+        if ($this->isAdmin() && $request->filled('nova_especialidade')) {
+            $novaEspecialidade = $this->validarNovaEspecialidade($request);
+            $this->criarEspecialidade($novaEspecialidade);
+            $request->merge(['especialidade' => $novaEspecialidade]);
+            $especialidades[] = $novaEspecialidade;
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'crm' => 'required|string|max:20|unique:medicos,crm',
-            'especialidade' => 'required|string|max:255',
+            'especialidade' => ['required', 'string', Rule::in($especialidades)],
             'telefone' => 'nullable|string|max:20',
             'endereco' => 'nullable|string',
         ]);
@@ -58,12 +77,18 @@ class MedicoController extends Controller
             'endereco' => $request->endereco,
         ]);
 
+        $mensagem = 'Médico cadastrado com sucesso!';
+        if ($novaEspecialidade) {
+            $mensagem .= ' Nova especialidade adicionada com sucesso.';
+        }
+
         return redirect()->route('medicos.index')
-            ->with('success', 'Médico cadastrado com sucesso!');
+            ->with('success', $mensagem);
     }
 
     /**
      * Display the specified resource.
+     * Exibe os detalhes de um médico específico.
      */
     public function show(string $id)
     {
@@ -73,25 +98,39 @@ class MedicoController extends Controller
 
     /**
      * Show the form for editing the specified resource.
+     * Exibe o formulário para editar os dados de um médico existente.
      */
     public function edit(string $id)
     {
         $medico = Medico::with('user')->findOrFail($id);
-        return view('medicos.edit', compact('medico'));
+        $especialidades = $this->getEspecialidades();
+        $especialidadePadrao = $this->getEspecialidadePadrao();
+
+        return view('medicos.edit', compact('medico', 'especialidades', 'especialidadePadrao'));
     }
 
     /**
      * Update the specified resource in storage.
+     * Processa o formulário de edição de médico e atualiza os dados no banco.
      */
     public function update(Request $request, string $id)
     {
         $medico = Medico::findOrFail($id);
+        $especialidades = $this->getEspecialidades();
+        $novaEspecialidade = null;
+
+        if ($this->isAdmin() && $request->filled('nova_especialidade')) {
+            $novaEspecialidade = $this->validarNovaEspecialidade($request);
+            $this->criarEspecialidade($novaEspecialidade);
+            $request->merge(['especialidade' => $novaEspecialidade]);
+            $especialidades[] = $novaEspecialidade;
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $medico->user_id,
             'crm' => 'required|string|max:20|unique:medicos,crm,' . $id,
-            'especialidade' => 'required|string|max:255',
+            'especialidade' => ['required', 'string', Rule::in($especialidades)],
             'telefone' => 'nullable|string|max:20',
             'endereco' => 'nullable|string',
         ]);
@@ -118,12 +157,18 @@ class MedicoController extends Controller
             'endereco' => $request->endereco,
         ]);
 
+        $mensagem = 'Médico atualizado com sucesso!';
+        if ($novaEspecialidade) {
+            $mensagem .= ' Nova especialidade adicionada com sucesso.';
+        }
+
         return redirect()->route('medicos.index')
-            ->with('success', 'Médico atualizado com sucesso!');
+            ->with('success', $mensagem);
     }
 
     /**
      * Remove the specified resource from storage.
+     * Exclui um médico do banco de dados, removendo também o usuário associado.
      */
     public function destroy(string $id)
     {
@@ -135,5 +180,71 @@ class MedicoController extends Controller
 
         return redirect()->route('medicos.index')
             ->with('success', 'Médico excluído com sucesso!');
+    }
+
+    private function getEspecialidades(): array
+    {
+        $this->sincronizarEspecialidadesIniciais();
+
+        return MedicalSpecialty::query()
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+    }
+
+    private function getEspecialidadePadrao(): string
+    {
+        $especialidades = $this->getEspecialidades();
+        $padrao = config('medical.default_specialty');
+
+        if ($padrao && in_array($padrao, $especialidades, true)) {
+            return $padrao;
+        }
+
+        return $especialidades[0] ?? '';
+    }
+
+    private function sincronizarEspecialidadesIniciais(): void
+    {
+        if (MedicalSpecialty::query()->exists()) {
+            return;
+        }
+
+        foreach (config('medical.specialties', []) as $especialidade) {
+            $especialidade = trim((string) $especialidade);
+
+            if ($especialidade !== '') {
+                MedicalSpecialty::firstOrCreate(['name' => $especialidade]);
+            }
+        }
+    }
+
+    private function validarNovaEspecialidade(Request $request): string
+    {
+        $dados = $request->validate([
+            'nova_especialidade' => [
+                'required',
+                'string',
+                'min:3',
+                'max:255',
+                'regex:/^[A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ][A-Za-zÀ-ÿ\s]+$/u',
+                Rule::unique('medical_specialties', 'name'),
+            ],
+        ], [
+            'nova_especialidade.regex' => 'A nova especialidade deve seguir o padrão das demais existentes (inicial maiúscula e apenas letras/espaços).',
+            'nova_especialidade.unique' => 'Essa especialidade já existe na lista.',
+        ]);
+
+        return Str::of($dados['nova_especialidade'])->squish()->toString();
+    }
+
+    private function criarEspecialidade(string $nome): void
+    {
+        MedicalSpecialty::firstOrCreate(['name' => $nome]);
+    }
+
+    private function isAdmin(): bool
+    {
+        return auth()->check() && auth()->user()->isAdmin();
     }
 }
