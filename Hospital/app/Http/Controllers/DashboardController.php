@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Medico;
 use App\Models\Paciente;
+use App\Models\Agendamento;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -64,9 +65,14 @@ class DashboardController extends Controller
             ]);
         }
 
+        $totalPacientesAgendados = Agendamento::where('medico_id', $medico->id)
+            ->whereIn('status', ['pendente', 'confirmada'])
+            ->where('data_hora', '>=', now())
+            ->count();
+
         $data = [
             'medico' => $medico,
-            'totalPacientes' => Paciente::count(),
+            'totalPacientesAgendados' => $totalPacientesAgendados,
         ];
 
         return view('dashboard.medico', $data);
@@ -90,8 +96,14 @@ class DashboardController extends Controller
             ]);
         }
 
+        $agendamentosCount = Agendamento::where('paciente_id', $paciente->id)
+            ->whereIn('status', ['pendente', 'confirmada'])
+            ->where('data_hora', '>=', now())
+            ->count();
+
         $data = [
             'paciente' => $paciente,
+            'agendamentosCount' => $agendamentosCount,
         ];
 
         return view('dashboard.paciente', $data);

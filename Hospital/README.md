@@ -99,6 +99,7 @@ php artisan db:seed --class=AdminSeeder
 - Visualizar lista de pacientes
 - Ver e editar dados pessoais
 - Dashboard com informações profissionais
+- **Gerenciar disponibilidades** para atendimentos (data, horário, período)
 - **Não pode** cadastrar novos pacientes ou médicos
 
 ### Paciente
@@ -106,6 +107,38 @@ php artisan db:seed --class=AdminSeeder
 - Dashboard com dados de saúde
 - **Não pode** acessar dados de outros pacientes
 - **Não pode** cadastrar outros perfis
+
+---
+
+## 📅 Sistema de Disponibilidades (Médicos)
+
+### O que é?
+Os médicos podem **selecionar seus períodos de disponibilidade**, indicando quando estarão disponíveis para atendimentos.
+
+### Como funciona?
+- Médicos definem: **data**, **hora de início/fim** e **período** (manhã, tarde, noite)
+- **Períodos não marcados** = médico **indisponível**
+- Sistema evita conflitos de horários
+
+### Formato dos dados
+- **Data**: dd/mm/yyyy (ex: 25/02/2026)
+- **Horários**: HH:mm no formato 24 horas (ex: 09:00, 14:30)
+- **Períodos**: manhã, tarde ou noite
+
+### Rotas de Disponibilidade
+| Rota | Descrição | Acesso |
+|------|-----------|--------|
+| `/disponibilidades` | Lista de disponibilidades do médico | Médico |
+| `/disponibilidades/criar` | Adicionar nova disponibilidade | Médico |
+| `/disponibilidades/calendario` | Visualização em calendário | Médico |
+| `/disponibilidades/{id}/editar` | Editar disponibilidade | Médico |
+| `DELETE /disponibilidades/{id}` | Remover disponibilidade | Médico |
+
+### Como acessar?
+1. Faça login como **Médico**
+2. Vá para **Lista de Médicos** (`/medicos`)
+3. Clique em **"Minhas Disponibilidades"**
+4. Adicione seus períodos disponíveis
 
 ---
 
@@ -201,5 +234,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Última Atualização**: 3 de Fevereiro de 2026
+**Última Atualização**: 24 de Fevereiro de 2026
 

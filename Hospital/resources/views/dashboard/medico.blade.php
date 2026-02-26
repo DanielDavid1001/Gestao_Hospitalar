@@ -39,8 +39,8 @@
         <div class="col-md-6">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Total de Pacientes</h5>
-                    <h2 class="card-text">{{ $totalPacientes }}</h2>
+                    <h5 class="card-title">Pacientes com consulta agendada</h5>
+                    <h2 class="card-text">{{ $totalPacientesAgendados }}</h2>
                 </div>
             </div>
         </div>
@@ -64,13 +64,13 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <a href="{{ route('pacientes.index') }}" class="btn btn-outline-primary btn-block w-100">
-                                <i class="fas fa-users mr-2"></i> Visualizar Pacientes
+                            <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-primary btn-block w-100">
+                                <i class="bi bi-calendar-check mr-2"></i> Minhas Disponibilidades
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-outline-success btn-block w-100" disabled>
-                                <i class="fas fa-calendar mr-2"></i> Meus Agendamentos
+                            <a href="{{ route('pacientes.index') }}" class="btn btn-outline-primary btn-block w-100">
+                                <i class="fas fa-users mr-2"></i> Visualizar Pacientes
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">

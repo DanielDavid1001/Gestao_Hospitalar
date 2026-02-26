@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\MedicalSpecialtyController;
+use App\Http\Controllers\MedicoAvailabilityController;
+use App\Http\Controllers\AgendamentoController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
@@ -25,8 +28,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('medicos', [MedicoController::class, 'store'])->name('medicos.store');
     });
     
-    // INDEX, SHOW, EDIT, UPDATE, DELETE - Admin e Medico podem acessar
-    Route::middleware(['role:admin,medico'])->group(function () {
+    // INDEX, SHOW, EDIT, UPDATE, DELETE - apenas Admin pode acessar
+    Route::middleware(['role:admin'])->group(function () {
         Route::get('medicos', [MedicoController::class, 'index'])->name('medicos.index');
         Route::get('medicos/{medico}', [MedicoController::class, 'show'])->name('medicos.show');
         Route::get('medicos/{medico}/edit', [MedicoController::class, 'edit'])->name('medicos.edit');
@@ -39,10 +42,6 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
         Route::get('pacientes/create', [PacienteController::class, 'create'])->name('pacientes.create');
         Route::post('pacientes', [PacienteController::class, 'store'])->name('pacientes.store');
-    });
-    
-    // INDEX, SHOW, EDIT, UPDATE, DELETE - Admin e Paciente podem acessar
-    Route::middleware(['role:admin,paciente'])->group(function () {
         Route::get('pacientes', [PacienteController::class, 'index'])->name('pacientes.index');
         Route::get('pacientes/{paciente}', [PacienteController::class, 'show'])->name('pacientes.show');
         Route::get('pacientes/{paciente}/edit', [PacienteController::class, 'edit'])->name('pacientes.edit');
@@ -53,6 +52,28 @@ Route::middleware(['auth'])->group(function () {
     // Routes for Admins - Apenas Admin pode gerenciar outros admins
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('admins', AdminController::class);
+        Route::get('especialidades', [MedicalSpecialtyController::class, 'index'])->name('especialidades.index');
+        Route::delete('especialidades/{medicalSpecialty}', [MedicalSpecialtyController::class, 'destroy'])->name('especialidades.destroy');
+    });
+
+    // Routes for Medico Availabilities - Apenas Médicos podem gerenciar suas disponibilidades
+    Route::middleware(['role:medico'])->group(function () {
+        Route::get('disponibilidades', [MedicoAvailabilityController::class, 'index'])->name('medico.disponibilidades.index');
+        Route::get('disponibilidades/periodo', [MedicoAvailabilityController::class, 'createPeriodo'])->name('medico.disponibilidades.periodo');
+        Route::post('disponibilidades/periodo', [MedicoAvailabilityController::class, 'storePeriodo'])->name('medico.disponibilidades.periodo.store');
+        Route::get('disponibilidades/calendario', [MedicoAvailabilityController::class, 'calendario'])->name('medico.disponibilidades.calendario');
+    });
+
+    // Routes for Agendamentos - Apenas Pacientes podem agendar consultas
+    Route::middleware(['role:paciente'])->group(function () {
+        Route::get('agendamentos', [AgendamentoController::class, 'escolher'])->name('agendamentos.escolher');
+        Route::get('agendamentos/especialidade/{especialidade}', [AgendamentoController::class, 'porEspecialidade'])->name('agendamentos.por-especialidade');
+        Route::get('agendamentos/profissional', [AgendamentoController::class, 'porProfissional'])->name('agendamentos.por-profissional');
+        Route::get('agendamentos/disponibilidades/{medico_id}', [AgendamentoController::class, 'disponibilidades'])->name('agendamentos.disponibilidades');
+        Route::get('agendamentos/confirmar/{medico_id}/{data}/{hora_inicio?}', [AgendamentoController::class, 'confirmar'])->name('agendamentos.confirmar');
+        Route::post('agendamentos', [AgendamentoController::class, 'store'])->name('agendamentos.store');
+        Route::get('meus-agendamentos', [AgendamentoController::class, 'meus'])->name('agendamentos.meus');
+        Route::delete('agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
     });
 });
 

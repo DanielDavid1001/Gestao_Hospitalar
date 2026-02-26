@@ -21,4 +21,12 @@ class Medico extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Relacionamento com MedicoAvailability
+     */
+    public function availabilities()
+    {
+        return $this->hasMany(MedicoAvailability::class, 'medico_id');
+    }
 }

@@ -61,13 +61,15 @@
     <!-- Cards de Ações -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Consultas Agendadas</h5>
-                    <h2 class="card-text">0</h2>
-                    <small>(A implementar)</small>
+            <a href="{{ route('agendamentos.meus') }}" class="btn-link" style="text-decoration: none;">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Consultas Agendadas</h5>
+                        <h2 class="card-text">{{ $agendamentosCount ?? 0 }}</h2>
+                        <small>Clique para ver detalhes</small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-6">
             <div class="card bg-warning text-white">
@@ -95,7 +97,7 @@
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-outline-success btn-block w-100" disabled>
+                            <a href="{{ route('agendamentos.escolher') }}" class="btn btn-outline-success btn-block w-100">
                                 <i class="fas fa-calendar mr-2"></i> Agendar Consulta
                             </a>
                         </div>
@@ -114,7 +116,7 @@
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="alert alert-info" role="alert">
-                <strong>ℹ️ Informação:</strong> As funcionalidades de agendamento e prontuário eletrônico estão em desenvolvimento e estarão disponíveis em breve.
+                <strong>ℹ️ Informação:</strong> A funcionalidade de prontuário eletrônico está em desenvolvimento e estará disponível em breve.
             </div>
         </div>
     </div>
