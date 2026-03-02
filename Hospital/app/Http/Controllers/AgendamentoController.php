@@ -180,14 +180,22 @@ class AgendamentoController extends Controller
         $medico = Medico::findOrFail($medico_id);
         
         // Verificar se a disponibilidade existe
-        $disponibilidade = MedicoAvailability::where('medico_id', $medico_id)
-            ->where('data', $data)
-            ->when($hora_inicio, function ($query) use ($hora_inicio) {
-                return $query->where('hora_inicio', $hora_inicio);
-            })
-            ->first();
+        $disponibilidades = MedicoAvailability::where('medico_id', $medico_id)
+            ->get();
+
+        $disponibilidade = $disponibilidades->first(function ($disp) use ($data, $hora_inicio) {
+            $dataIgual = Carbon::parse($disp->data)->toDateString() === $data;
+            
+            if (!$hora_inicio) {
+                return $dataIgual;
+            }
+            
+            $horaIgual = $disp->hora_inicio->format('H:i') === $hora_inicio;
+            return $dataIgual && $horaIgual;
+        });
 
         if (!$disponibilidade) {
+            \Log::error("Disponibilidade não encontrada: medico_id=$medico_id, data=$data, hora_inicio=$hora_inicio");
             return redirect()->route('agendamentos.disponibilidades', $medico_id)
                 ->with('error', 'Disponibilidade não encontrada.');
         }
@@ -202,6 +210,9 @@ class AgendamentoController extends Controller
     {
         $user = Auth::user();
         $paciente = $user->paciente;
+
+        \Log::info('=== STORE AGENDAMENTO - Iniciando');
+        \Log::info('Request data: ' . json_encode($request->all()));
 
         if (!$paciente) {
             return redirect()->route('dashboard')
@@ -224,6 +235,8 @@ class AgendamentoController extends Controller
             'confirmar_dados.accepted' => 'Confirme que os dados do paciente estão corretos para continuar.',
         ]);
 
+        \Log::info('Validação passou. Dados validados: ' . json_encode($validated));
+
         if (!$paciente->data_nascimento) {
             return redirect()->route('paciente.perfil.edit')
                 ->with('error', 'Complete sua data de nascimento no perfil antes de agendar a consulta.');
@@ -231,11 +244,18 @@ class AgendamentoController extends Controller
 
         $data_hora = Carbon::createFromFormat('Y-m-d H:i', $validated['data'] . ' ' . $validated['hora_inicio']);
 
+        \Log::info('Data hora criada: ' . $data_hora);
+
         // Verificar se a disponibilidade existe
-        $disponibilidade = MedicoAvailability::where('medico_id', $validated['medico_id'])
-            ->where('data', $validated['data'])
-            ->where('hora_inicio', $validated['hora_inicio'])
-            ->first();
+        $disponibilidades = MedicoAvailability::where('medico_id', $validated['medico_id'])->get();
+        
+        $disponibilidade = $disponibilidades->first(function ($disp) use ($validated) {
+            $dataIgual = Carbon::parse($disp->data)->toDateString() === $validated['data'];
+            $horaIgual = $disp->hora_inicio->format('H:i') === $validated['hora_inicio'];
+            return $dataIgual && $horaIgual;
+        });
+
+        \Log::info('Disponibilidade encontrada: ' . ($disponibilidade ? 'SIM' : 'NÃO'));
 
         if (!$disponibilidade) {
             return redirect()->back()
@@ -250,6 +270,8 @@ class AgendamentoController extends Controller
 
         $maxConsultas = $this->calcularMaxConsultasDisponibilidade($disponibilidade);
 
+        \Log::info('Slot já reservado: ' . $slotJaReservado . ' de ' . $maxConsultas);
+
         if ($slotJaReservado >= $maxConsultas) {
             return redirect()->back()
                 ->withInput()
@@ -257,6 +279,7 @@ class AgendamentoController extends Controller
         }
 
         try {
+            \Log::info('Criando agendamento...');
             // Criar agendamento
             Agendamento::create([
                 'paciente_id' => $paciente->id,
@@ -268,9 +291,12 @@ class AgendamentoController extends Controller
                 'status' => 'pendente',
             ]);
 
+            \Log::info('Agendamento criado com sucesso!');
             return redirect()->route('dashboard')
                 ->with('success', 'Consulta agendada com sucesso!');
         } catch (\Exception $e) {
+            \Log::error('Erro ao criar agendamento: ' . $e->getMessage());
+            \Log::error('Stack: ' . $e->getTraceAsString());
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Erro ao agendar consulta: ' . $e->getMessage());
