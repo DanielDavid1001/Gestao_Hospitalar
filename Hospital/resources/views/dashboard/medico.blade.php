@@ -1,94 +1,66 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h2 class="mb-4">Dashboard - Médico</h2>
-            <p class="text-muted">Bem-vindo, Dr(a). {{ auth()->user()->name }}!</p>
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-sm-6">
+            <h1 class="mb-0">Dashboard Médico</h1>
+        </div>
+        <div class="col-sm-6 text-end">
+            <span class="text-muted">Bem-vindo, Dr(a). {{ auth()->user()->name }}</span>
         </div>
     </div>
 
-    <!-- Informações do Médico -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Meus Dados Profissionais</span>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Nome:</strong> {{ $medico->user->name }}</p>
-                            <p><strong>Email:</strong> {{ $medico->user->email }}</p>
-                            <p><strong>CRM:</strong> {{ $medico->crm }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Especialidade:</strong> {{ $medico->especialidade }}</p>
-                            <p><strong>Telefone:</strong> {{ $medico->telefone ?? '-' }}</p>
-                            <p><strong>Endereço:</strong> {{ $medico->endereco ?? '-' }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cards de Estatísticas -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Pacientes com consulta agendada</h5>
-                    <h2 class="card-text">{{ $totalPacientesAgendados }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Consultas (A Implementar)</h5>
-                    <h2 class="card-text">0</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ações Rápidas -->
     <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Ações Disponíveis</span>
+        <div class="col-12">
+            <div class="small-box text-bg-info">
+                <div class="inner text-center">
+                    <h3>{{ $totalConsultasAgendadas }}</h3>
+                    <p>Consultas Pendentes</p>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-primary btn-block w-100">
-                                <i class="bi bi-calendar-check mr-2"></i> Minhas Disponibilidades
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ route('pacientes.index') }}" class="btn btn-outline-primary btn-block w-100">
-                                <i class="fas fa-users mr-2"></i> Visualizar Pacientes
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-outline-info btn-block w-100" disabled>
-                                <i class="fas fa-file-medical mr-2"></i> Prontuários
-                            </a>
-                        </div>
-                    </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-calendar2-week"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Aviso de Funcionalidades em Desenvolvimento -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <strong>ℹ️ Informação:</strong> As funcionalidades de agendamento e prontuários estão em desenvolvimento e estarão disponíveis em breve.
+    <div class="card card-outline card-primary mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Meus Dados Profissionais</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Nome:</strong> {{ $medico->user->name }}</p>
+                    <p><strong>Email:</strong> {{ $medico->user->email }}</p>
+                    <p><strong>CRM:</strong> {{ $medico->crm }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Especialidade:</strong> {{ $medico->especialidade }}</p>
+                    <p><strong>Telefone:</strong> {{ $medico->telefone ?? '-' }}</p>
+                    <p><strong>Endereço:</strong> {{ $medico->endereco ?? '-' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-outline card-secondary">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Ações Disponíveis</h3>
+        </div>
+        <div class="card-body">
+            <div class="row justify-content-center g-2">
+                <div class="col-md-4">
+                    <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-calendar-check me-1"></i> Minhas Disponibilidades
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{{ route('agendamentos.meus') }}" class="btn btn-outline-info w-100">
+                        <i class="bi bi-clipboard2-check me-1"></i> Minhas Consultas
+                    </a>
+                </div>
             </div>
         </div>
     </div>

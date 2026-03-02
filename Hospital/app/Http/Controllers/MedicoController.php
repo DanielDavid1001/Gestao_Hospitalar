@@ -7,7 +7,6 @@ use App\Models\Medico;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class MedicoController extends Controller
@@ -41,14 +40,6 @@ class MedicoController extends Controller
     public function store(Request $request)
     {
         $especialidades = $this->getEspecialidades();
-        $novaEspecialidade = null;
-
-        if ($this->isAdmin() && $request->filled('nova_especialidade')) {
-            $novaEspecialidade = $this->validarNovaEspecialidade($request);
-            $this->criarEspecialidade($novaEspecialidade);
-            $request->merge(['especialidade' => $novaEspecialidade]);
-            $especialidades[] = $novaEspecialidade;
-        }
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -77,13 +68,8 @@ class MedicoController extends Controller
             'endereco' => $request->endereco,
         ]);
 
-        $mensagem = 'Médico cadastrado com sucesso!';
-        if ($novaEspecialidade) {
-            $mensagem .= ' Nova especialidade adicionada com sucesso.';
-        }
-
         return redirect()->route('medicos.index')
-            ->with('success', $mensagem);
+            ->with('success', 'Médico cadastrado com sucesso!');
     }
 
     /**
@@ -117,14 +103,6 @@ class MedicoController extends Controller
     {
         $medico = Medico::findOrFail($id);
         $especialidades = $this->getEspecialidades();
-        $novaEspecialidade = null;
-
-        if ($this->isAdmin() && $request->filled('nova_especialidade')) {
-            $novaEspecialidade = $this->validarNovaEspecialidade($request);
-            $this->criarEspecialidade($novaEspecialidade);
-            $request->merge(['especialidade' => $novaEspecialidade]);
-            $especialidades[] = $novaEspecialidade;
-        }
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -157,13 +135,8 @@ class MedicoController extends Controller
             'endereco' => $request->endereco,
         ]);
 
-        $mensagem = 'Médico atualizado com sucesso!';
-        if ($novaEspecialidade) {
-            $mensagem .= ' Nova especialidade adicionada com sucesso.';
-        }
-
         return redirect()->route('medicos.index')
-            ->with('success', $mensagem);
+            ->with('success', 'Médico atualizado com sucesso!');
     }
 
     /**
@@ -219,32 +192,4 @@ class MedicoController extends Controller
         }
     }
 
-    private function validarNovaEspecialidade(Request $request): string
-    {
-        $dados = $request->validate([
-            'nova_especialidade' => [
-                'required',
-                'string',
-                'min:3',
-                'max:255',
-                'regex:/^[A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ][A-Za-zÀ-ÿ\s]+$/u',
-                Rule::unique('medical_specialties', 'name'),
-            ],
-        ], [
-            'nova_especialidade.regex' => 'A nova especialidade deve seguir o padrão das demais existentes (inicial maiúscula e apenas letras/espaços).',
-            'nova_especialidade.unique' => 'Essa especialidade já existe na lista.',
-        ]);
-
-        return Str::of($dados['nova_especialidade'])->squish()->toString();
-    }
-
-    private function criarEspecialidade(string $nome): void
-    {
-        MedicalSpecialty::firstOrCreate(['name' => $nome]);
-    }
-
-    private function isAdmin(): bool
-    {
-        return auth()->check() && auth()->user()->isAdmin();
-    }
 }

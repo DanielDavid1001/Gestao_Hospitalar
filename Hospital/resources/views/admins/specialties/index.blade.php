@@ -6,8 +6,8 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Especialidades Medicas</span>
-                    <a href="{{ route('medicos.index') }}" class="btn btn-secondary btn-sm">Voltar</a>
+                    <span>Gerenciar Especialidade</span>
+                    <a href="{{ route('medicos.index') }}" class="btn btn-secondary btn-sm ms-auto me-1">Voltar</a>
                 </div>
 
                 <div class="card-body">
@@ -24,6 +24,26 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     @endif
+
+                    <form action="{{ route('especialidades.store') }}" method="POST" class="mb-4">
+                        @csrf
+                        <div class="row g-2 align-items-start">
+                            <div class="col-md-9">
+                                <label for="name" class="form-label">Adicionar nova especialidade</label>
+                                <input type="text" class="form-control @error('name') is-invalid @enderror"
+                                       id="name" name="name" value="{{ old('name') }}"
+                                       placeholder="Ex.: Medicina do Trabalho" required>
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Use inicial maiúscula e apenas letras/espaços.</div>
+                            </div>
+                            <div class="col-md-3 d-grid">
+                                <label class="form-label d-none d-md-block">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary">Adicionar</button>
+                            </div>
+                        </div>
+                    </form>
 
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">

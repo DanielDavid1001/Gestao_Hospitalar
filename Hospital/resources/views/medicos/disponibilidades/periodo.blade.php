@@ -2,6 +2,23 @@
 
 @section('content')
 <div class="container py-4">
+    @if(auth()->user()->isAdmin())
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="GET" action="{{ route('medico.disponibilidades.periodo') }}" class="d-flex gap-2 align-items-center">
+                    <label for="medico_id" class="form-label mb-0">Médico:</label>
+                    <select id="medico_id" name="medico_id" class="form-select" onchange="this.form.submit()">
+                        @foreach(($medicosAdmin ?? []) as $medicoItem)
+                            <option value="{{ $medicoItem->id }}" @selected(($medicoSelecionadoId ?? null) == $medicoItem->id)>
+                                {{ $medicoItem->nome ?? ($medicoItem->user->name ?? ('Médico #' . $medicoItem->id)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <div class="row mb-4">
         <div class="col-md-12">
             <h2><i class="bi bi-calendar-range"></i> Adicionar Periodo de Disponibilidade</h2>
@@ -27,6 +44,9 @@
                 <div class="card-body">
                     <form action="{{ route('medico.disponibilidades.periodo.store') }}" method="POST">
                         @csrf
+                        @if(auth()->user()->isAdmin())
+                            <input type="hidden" name="medico_id" value="{{ $medicoSelecionadoId }}">
+                        @endif
 
                         <div class="row">
                             <div class="col-md-6">
@@ -88,6 +108,14 @@
                             @error('periodo')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <div class="form-text">Dias já cadastrados para o período selecionado aparecem destacados abaixo.</div>
+                        </div>
+
+                        <div class="mb-3" id="periodo_ocupado_box" style="display: none;">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block mb-2" id="periodo_ocupado_resumo"></small>
+                                <div id="periodo_ocupado_lista" class="d-flex flex-wrap gap-1"></div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -107,7 +135,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> Salvar Periodo
                             </button>
-                            <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('medico.disponibilidades.index', auth()->user()->isAdmin() ? ['medico_id' => $medicoSelecionadoId] : []) }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i> Cancelar
                             </a>
                         </div>
@@ -151,6 +179,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const excluirInput = document.getElementById('excluir_data');
     const lista = document.getElementById('lista_exclusoes');
     const hidden = document.getElementById('datas_excluidas');
+    const periodoSelect = document.getElementById('periodo');
+    const dataInicioInput = document.getElementById('data_inicio');
+    const dataFimInput = document.getElementById('data_fim');
+    const periodoOcupadoBox = document.getElementById('periodo_ocupado_box');
+    const periodoOcupadoResumo = document.getElementById('periodo_ocupado_resumo');
+    const periodoOcupadoLista = document.getElementById('periodo_ocupado_lista');
+    const datasComPeriodo = @json($datasComPeriodo ?? []);
 
     const exclusions = new Set();
 
@@ -195,6 +230,60 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('data_inicio').setAttribute('min', hoje);
     document.getElementById('data_fim').setAttribute('min', hoje);
     excluirInput.setAttribute('min', hoje);
+
+    const dateRange = (startDate, endDate) => {
+        const dates = [];
+        const current = new Date(startDate + 'T00:00:00');
+        const end = new Date(endDate + 'T00:00:00');
+
+        while (current <= end) {
+            const year = current.getFullYear();
+            const month = String(current.getMonth() + 1).padStart(2, '0');
+            const day = String(current.getDate()).padStart(2, '0');
+            dates.push(`${year}-${month}-${day}`);
+            current.setDate(current.getDate() + 1);
+        }
+
+        return dates;
+    };
+
+    const renderPeriodoOcupado = () => {
+        const periodo = periodoSelect.value;
+        const dataInicio = dataInicioInput.value;
+        const dataFim = dataFimInput.value;
+
+        periodoOcupadoLista.innerHTML = '';
+
+        if (!periodo || !dataInicio || !dataFim || dataInicio > dataFim) {
+            periodoOcupadoBox.style.display = 'none';
+            return;
+        }
+
+        const ocupadas = new Set(datasComPeriodo[periodo] || []);
+        const intervalo = dateRange(dataInicio, dataFim);
+        const ocupadasNoIntervalo = intervalo.filter((data) => ocupadas.has(data));
+
+        if (ocupadasNoIntervalo.length === 0) {
+            periodoOcupadoBox.style.display = 'none';
+            return;
+        }
+
+        periodoOcupadoResumo.textContent = `${ocupadasNoIntervalo.length} dia(s) neste intervalo já possuem este período e serão ignorados.`;
+
+        ocupadasNoIntervalo.forEach((data) => {
+            const badge = document.createElement('span');
+            badge.className = 'badge text-bg-light border text-secondary';
+            badge.textContent = data;
+            periodoOcupadoLista.appendChild(badge);
+        });
+
+        periodoOcupadoBox.style.display = 'block';
+    };
+
+    periodoSelect.addEventListener('change', renderPeriodoOcupado);
+    dataInicioInput.addEventListener('change', renderPeriodoOcupado);
+    dataFimInput.addEventListener('change', renderPeriodoOcupado);
+    renderPeriodoOcupado();
 });
 </script>
 @endsection

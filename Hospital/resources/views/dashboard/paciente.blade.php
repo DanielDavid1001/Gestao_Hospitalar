@@ -1,20 +1,37 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h2 class="mb-4">Dashboard - Paciente</h2>
-            <p class="text-muted">Bem-vindo, {{ auth()->user()->name }}! Aqui você pode acompanhar sua saúde.</p>
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-sm-6">
+            <h1 class="mb-0">Dashboard Paciente</h1>
+        </div>
+        <div class="col-sm-6 text-end">
+            <span class="text-muted">Bem-vindo, {{ auth()->user()->name }}</span>
         </div>
     </div>
 
-    <!-- Cartão com Dados do Paciente -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-12">
+            <a href="{{ route('agendamentos.meus') }}" class="text-decoration-none">
+                <div class="small-box text-bg-info">
+                    <div class="inner text-center">
+                        <h3>{{ $agendamentosCount ?? 0 }}</h3>
+                        <p>Consultas Pendentes</p>
+                    </div>
+                    <div class="small-box-icon">
+                        <i class="bi bi-calendar2-check"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Meus Dados Pessoais</span>
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Meus Dados Pessoais</h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -40,17 +57,16 @@
         </div>
     </div>
 
-    <!-- Informações Médicas -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Informações Médicas</span>
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Informações Médicas</h3>
                 </div>
                 <div class="card-body">
                     <p><strong>Alergias:</strong></p>
                     <p>{{ $paciente->alergias ?? 'Nenhuma alergia registrada' }}</p>
-                    
+
                     <p class="mt-3"><strong>Endereço:</strong></p>
                     <p>{{ $paciente->endereco ?? 'Não informado' }}</p>
                 </div>
@@ -58,65 +74,22 @@
         </div>
     </div>
 
-    <!-- Cards de Ações -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <a href="{{ route('agendamentos.meus') }}" class="btn-link" style="text-decoration: none;">
-                <div class="card bg-info text-white h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Consultas Agendadas</h5>
-                        <h2 class="card-text">{{ $agendamentosCount ?? 0 }}</h2>
-                        <small>Clique para ver detalhes</small>
-                    </div>
-                </div>
-            </a>
+    <div class="card card-outline card-secondary">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Ações Disponíveis</h3>
         </div>
-        <div class="col-md-6">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Prontuário</h5>
-                    <h2 class="card-text">-</h2>
-                    <small>(A implementar)</small>
+        <div class="card-body">
+            <div class="row justify-content-center g-2">
+                <div class="col-md-5">
+                    <a href="{{ route('paciente.perfil.edit') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-edit me-1"></i> Editar Meus Dados
+                    </a>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ações Disponíveis -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Ações Disponíveis</span>
+                <div class="col-md-5">
+                    <a href="{{ route('agendamentos.escolher') }}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-calendar me-1"></i> Agendar Consulta
+                    </a>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ route('pacientes.edit', $paciente->id) }}" class="btn btn-outline-primary btn-block w-100">
-                                <i class="fas fa-edit mr-2"></i> Editar Meus Dados
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ route('agendamentos.escolher') }}" class="btn btn-outline-success btn-block w-100">
-                                <i class="fas fa-calendar mr-2"></i> Agendar Consulta
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-outline-info btn-block w-100" disabled>
-                                <i class="fas fa-file-medical mr-2"></i> Ver Prontuário
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Aviso de Funcionalidades em Desenvolvimento -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <strong>ℹ️ Informação:</strong> A funcionalidade de prontuário eletrônico está em desenvolvimento e estará disponível em breve.
             </div>
         </div>
     </div>

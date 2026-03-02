@@ -3,9 +3,14 @@
 @section('content')
 <div class="container py-4">
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <h2><i class="bi bi-check-circle"></i> Confirmar Agendamento</h2>
-            <p class="text-muted">Preencha os dados para confirmar a consulta</p>
+            <p class="text-muted">Confira os dados cadastrados e confirme se estão corretos</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+            <a href="{{ route('agendamentos.disponibilidades', $medico->id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
         </div>
     </div>
 
@@ -23,7 +28,7 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card card-outline card-primary">
                 <div class="card-body">
                     <form action="{{ route('agendamentos.store') }}" method="POST">
                         @csrf
@@ -45,34 +50,37 @@
 
                         <h5 class="mb-3">Dados do Paciente</h5>
 
-                        <div class="mb-3">
-                            <label for="nome_paciente" class="form-label">Nome Completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('nome_paciente') is-invalid @enderror"
-                                   id="nome_paciente" name="nome_paciente" value="{{ old('nome_paciente') }}" required>
-                            @error('nome_paciente')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <strong>Nome:</strong>
+                                <div>{{ $paciente->user->name }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Email:</strong>
+                                <div>{{ $paciente->user->email }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>CPF:</strong>
+                                <div>{{ $paciente->cpf ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Data de Nascimento:</strong>
+                                <div>{{ $paciente->data_nascimento ? $paciente->data_nascimento->format('d/m/Y') : '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Telefone:</strong>
+                                <div>{{ $paciente->telefone ?? '-' }}</div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="data_nascimento" class="form-label">Data de Nascimento <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('data_nascimento') is-invalid @enderror"
-                                   id="data_nascimento" name="data_nascimento" placeholder="dd/mm/yyyy"
-                                   value="{{ old('data_nascimento') }}" maxlength="10" required>
-                            @error('data_nascimento')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="form-check mb-3 mt-3">
+                            <input class="form-check-input @error('confirmar_dados') is-invalid @enderror" type="checkbox" id="confirmar_dados" name="confirmar_dados" value="1" required>
+                            <label class="form-check-label" for="confirmar_dados">
+                                Os dados do paciente estão corretos
+                            </label>
+                            @error('confirmar_dados')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
-                            <small class="text-muted">Formato: dd/mm/yyyy</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="nome_responsavel" class="form-label">Nome do Pai/Mãe ou Responsável</label>
-                            <input type="text" class="form-control @error('nome_responsavel') is-invalid @enderror"
-                                   id="nome_responsavel" name="nome_responsavel" value="{{ old('nome_responsavel') }}">
-                            @error('nome_responsavel')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">Opcional - deixe em branco se maior de idade</small>
                         </div>
 
                         <!-- Hidden fields -->
@@ -94,8 +102,8 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-light">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-calendar-check"></i> Resumo do Agendamento</h6>
                 </div>
                 <div class="card-body">
@@ -106,8 +114,8 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-header bg-light">
+            <div class="card card-outline card-primary mt-3">
+                <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-info-circle"></i> Atenção</h6>
                 </div>
                 <div class="card-body">
@@ -117,18 +125,4 @@
         </div>
     </div>
 </div>
-
-<script>
-// Auto-formatar data
-document.getElementById('data_nascimento').addEventListener('keyup', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length >= 2) {
-        value = value.substring(0, 2) + '/' + value.substring(2);
-    }
-    if (value.length >= 5) {
-        value = value.substring(0, 5) + '/' + value.substring(5, 9);
-    }
-    e.target.value = value;
-});
-</script>
 @endsection

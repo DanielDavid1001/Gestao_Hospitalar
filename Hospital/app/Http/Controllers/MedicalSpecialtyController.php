@@ -6,6 +6,8 @@ use App\Models\MedicalSpecialty;
 use App\Models\Medico;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MedicalSpecialtyController extends Controller
 {
@@ -21,6 +23,34 @@ class MedicalSpecialtyController extends Controller
         $defaultSpecialty = (string) config('medical.default_specialty', 'Clinico Geral');
 
         return view('admins.specialties.index', compact('especialidades', 'defaultSpecialty'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $dados = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'min:3',
+                'max:255',
+                'regex:/^[A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ][A-Za-zÀ-ÿ\s]+$/u',
+                Rule::unique('medical_specialties', 'name'),
+            ],
+        ], [
+            'name.regex' => 'A especialidade deve seguir o padrão das demais existentes (inicial maiúscula e apenas letras/espaços).',
+            'name.unique' => 'Essa especialidade já existe na lista.',
+        ]);
+
+        $nome = Str::of($dados['name'])->squish()->toString();
+
+        MedicalSpecialty::firstOrCreate(['name' => $nome]);
+
+        return redirect()
+            ->route('especialidades.index')
+            ->with('success', 'Especialidade adicionada com sucesso!');
     }
 
     /**

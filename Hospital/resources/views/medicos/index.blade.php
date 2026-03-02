@@ -8,9 +8,12 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Lista de Médicos</span>
                     @if(auth()->user()->isAdmin())
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 ms-auto me-1">
                             <a href="{{ route('especialidades.index') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-gear"></i> Gerenciar Especialidades
+                                <i class="bi bi-gear"></i> Gerenciar Especialidade
+                            </a>
+                            <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-calendar-check"></i> Gerenciar Horários
                             </a>
                             <a href="{{ route('medicos.create') }}" class="btn btn-primary btn-sm">
                                 <i class="bi bi-plus"></i> Novo Médico

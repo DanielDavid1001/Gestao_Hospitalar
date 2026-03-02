@@ -53,27 +53,45 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('admins', AdminController::class);
         Route::get('especialidades', [MedicalSpecialtyController::class, 'index'])->name('especialidades.index');
+        Route::post('especialidades', [MedicalSpecialtyController::class, 'store'])->name('especialidades.store');
         Route::delete('especialidades/{medicalSpecialty}', [MedicalSpecialtyController::class, 'destroy'])->name('especialidades.destroy');
     });
 
     // Routes for Medico Availabilities - Apenas Médicos podem gerenciar suas disponibilidades
-    Route::middleware(['role:medico'])->group(function () {
-        Route::get('disponibilidades', [MedicoAvailabilityController::class, 'index'])->name('medico.disponibilidades.index');
+    Route::middleware(['role:medico,admin'])->group(function () {
+        Route::get('disponibilidades', [MedicoAvailabilityController::class, 'calendario'])->name('medico.disponibilidades.index');
+        Route::get('disponibilidades/lista', [MedicoAvailabilityController::class, 'index'])->name('medico.disponibilidades.lista');
         Route::get('disponibilidades/periodo', [MedicoAvailabilityController::class, 'createPeriodo'])->name('medico.disponibilidades.periodo');
         Route::post('disponibilidades/periodo', [MedicoAvailabilityController::class, 'storePeriodo'])->name('medico.disponibilidades.periodo.store');
         Route::get('disponibilidades/calendario', [MedicoAvailabilityController::class, 'calendario'])->name('medico.disponibilidades.calendario');
+        Route::delete('disponibilidades/{id}', [MedicoAvailabilityController::class, 'destroy'])->name('medico.disponibilidades.destroy');
     });
 
     // Routes for Agendamentos - Apenas Pacientes podem agendar consultas
+    Route::middleware(['role:paciente,medico,admin'])->group(function () {
+        Route::get('meus-agendamentos', [AgendamentoController::class, 'meus'])->name('agendamentos.meus');
+    });
+
+    Route::middleware(['role:medico'])->group(function () {
+        Route::patch('agendamentos/{id}/validar', [AgendamentoController::class, 'validar'])->name('agendamentos.validar');
+        Route::patch('agendamentos/{id}/finalizar', [AgendamentoController::class, 'finalizar'])->name('agendamentos.finalizar');
+        Route::patch('agendamentos/{id}/nao-realizada', [AgendamentoController::class, 'naoRealizada'])->name('agendamentos.nao-realizada');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::delete('agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
+    });
+
+    // Rotas exclusivas para Pacientes (agendamento e cancelamento)
     Route::middleware(['role:paciente'])->group(function () {
+        Route::get('meu-perfil', [PacienteController::class, 'editPerfil'])->name('paciente.perfil.edit');
+        Route::put('meu-perfil', [PacienteController::class, 'updatePerfil'])->name('paciente.perfil.update');
         Route::get('agendamentos', [AgendamentoController::class, 'escolher'])->name('agendamentos.escolher');
         Route::get('agendamentos/especialidade/{especialidade}', [AgendamentoController::class, 'porEspecialidade'])->name('agendamentos.por-especialidade');
         Route::get('agendamentos/profissional', [AgendamentoController::class, 'porProfissional'])->name('agendamentos.por-profissional');
         Route::get('agendamentos/disponibilidades/{medico_id}', [AgendamentoController::class, 'disponibilidades'])->name('agendamentos.disponibilidades');
         Route::get('agendamentos/confirmar/{medico_id}/{data}/{hora_inicio?}', [AgendamentoController::class, 'confirmar'])->name('agendamentos.confirmar');
         Route::post('agendamentos', [AgendamentoController::class, 'store'])->name('agendamentos.store');
-        Route::get('meus-agendamentos', [AgendamentoController::class, 'meus'])->name('agendamentos.meus');
-        Route::delete('agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
     });
 });
 

@@ -36,10 +36,29 @@ class DashboardController extends Controller
      */
     private function dashboardAdmin()
     {
+        $consultasPorStatus = Agendamento::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $consultasPendentes = (int) ($consultasPorStatus['pendente'] ?? 0);
+        $consultasConfirmadas = (int) ($consultasPorStatus['confirmada'] ?? 0);
+        $consultasRealizadas = (int) ($consultasPorStatus['realizada'] ?? 0);
+        $consultasCanceladas = (int) ($consultasPorStatus['cancelada'] ?? 0);
+
         $data = [
-            'totalUsuarios' => User::count(),
+            'totalAdmins' => User::where('role', 'admin')->count(),
             'totalMedicos' => Medico::count(),
             'totalPacientes' => Paciente::count(),
+            'totalConsultas' => $consultasPendentes + $consultasConfirmadas + $consultasRealizadas + $consultasCanceladas,
+            'consultasPendentes' => $consultasPendentes,
+            'consultasConfirmadas' => $consultasConfirmadas,
+            'consultasRealizadas' => $consultasRealizadas,
+            'consultasCanceladas' => $consultasCanceladas,
+            'consultasStatusChart' => [
+                'labels' => ['Pendentes', 'Confirmadas', 'Realizadas', 'Canceladas'],
+                'data' => [$consultasPendentes, $consultasConfirmadas, $consultasRealizadas, $consultasCanceladas],
+            ],
             'medicosRecentes' => Medico::with('user')->latest()->take(5)->get(),
             'pacientesRecentes' => Paciente::with('user')->latest()->take(5)->get(),
         ];
@@ -65,14 +84,20 @@ class DashboardController extends Controller
             ]);
         }
 
-        $totalPacientesAgendados = Agendamento::where('medico_id', $medico->id)
-            ->whereIn('status', ['pendente', 'confirmada'])
-            ->where('data_hora', '>=', now())
+        $consultasAgendadasQuery = Agendamento::where('medico_id', $medico->id)
+            ->where('status', 'pendente');
+
+        $totalPacientesAgendados = (clone $consultasAgendadasQuery)
+            ->distinct('paciente_id')
+            ->count('paciente_id');
+
+        $totalConsultasAgendadas = (clone $consultasAgendadasQuery)
             ->count();
 
         $data = [
             'medico' => $medico,
             'totalPacientesAgendados' => $totalPacientesAgendados,
+            'totalConsultasAgendadas' => $totalConsultasAgendadas,
         ];
 
         return view('dashboard.medico', $data);
@@ -97,8 +122,7 @@ class DashboardController extends Controller
         }
 
         $agendamentosCount = Agendamento::where('paciente_id', $paciente->id)
-            ->whereIn('status', ['pendente', 'confirmada'])
-            ->where('data_hora', '>=', now())
+            ->where('status', 'pendente')
             ->count();
 
         $data = [

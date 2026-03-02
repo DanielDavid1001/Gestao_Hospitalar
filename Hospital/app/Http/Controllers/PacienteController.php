@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Paciente;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PacienteController extends Controller
@@ -132,6 +133,75 @@ class PacienteController extends Controller
 
         return redirect()->route('pacientes.index')
             ->with('success', 'Paciente atualizado com sucesso!');
+    }
+
+    /**
+     * Exibe o formulário de edição do paciente logado.
+     */
+    public function editPerfil()
+    {
+        $user = Auth::user();
+        $paciente = $user->paciente;
+
+        if (!$paciente) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Perfil de paciente não encontrado.');
+        }
+
+        $paciente->load('user');
+
+        return view('pacientes.edit', compact('paciente'));
+    }
+
+    /**
+     * Atualiza os dados do paciente logado.
+     */
+    public function updatePerfil(Request $request)
+    {
+        $user = Auth::user();
+        $paciente = $user->paciente;
+
+        if (!$paciente) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Perfil de paciente não encontrado.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $paciente->user_id,
+            'cpf' => 'required|string|max:14|unique:pacientes,cpf,' . $paciente->id,
+            'data_nascimento' => 'required|date',
+            'telefone' => 'nullable|string|max:20',
+            'endereco' => 'nullable|string',
+            'sexo' => 'nullable|in:M,F,Outro',
+            'tipo_sanguineo' => 'nullable|string|max:5',
+            'alergias' => 'nullable|string',
+        ]);
+
+        $paciente->user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        if ($request->filled('password')) {
+            $request->validate(['password' => 'string|min:8|confirmed']);
+            $paciente->user->update([
+                'password' => Hash::make($request->password),
+            ]);
+        }
+
+        $paciente->update([
+            'cpf' => $request->cpf,
+            'data_nascimento' => $request->data_nascimento,
+            'telefone' => $request->telefone,
+            'endereco' => $request->endereco,
+            'sexo' => $request->sexo,
+            'tipo_sanguineo' => $request->tipo_sanguineo,
+            'alergias' => $request->alergias,
+        ]);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Dados atualizados com sucesso!');
     }
 
     /**

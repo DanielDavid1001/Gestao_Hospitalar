@@ -1,14 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">Editar Paciente</div>
+        <div class="col-md-10 col-lg-9">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <span>Editar Paciente</span>
+                </div>
 
-                <div class="card-body">
-                    <form action="{{ route('pacientes.update', $paciente->id) }}" method="POST">
+                <div class="card-body p-4">
+                    @php
+                        $isPaciente = auth()->check() && auth()->user()->isPaciente();
+                    @endphp
+
+                    <form action="{{ $isPaciente ? route('paciente.perfil.update') : route('pacientes.update', $paciente->id) }}" method="POST">
                         @csrf
                         @method('PUT')
 
@@ -127,8 +133,10 @@
                             @enderror
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ route('pacientes.index') }}" class="btn btn-secondary">Cancelar</a>
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+                            <a href="{{ $isPaciente ? route('dashboard') : route('pacientes.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
                             <button type="submit" class="btn btn-primary">Atualizar</button>
                         </div>
                     </form>

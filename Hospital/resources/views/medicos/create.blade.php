@@ -69,19 +69,6 @@
                             @enderror
                         </div>
 
-                        @if(auth()->check() && auth()->user()->isAdmin())
-                            <div class="mb-3">
-                                <label for="nova_especialidade" class="form-label">Adicionar nova especialidade (apenas ADM)</label>
-                                <input type="text" class="form-control @error('nova_especialidade') is-invalid @enderror"
-                                       id="nova_especialidade" name="nova_especialidade" value="{{ old('nova_especialidade') }}"
-                                       placeholder="Ex.: Medicina do Trabalho">
-                                <div class="form-text">A nova especialidade deve seguir o padrão das demais já existentes (inicial maiúscula e apenas letras/espaços).</div>
-                                @error('nova_especialidade')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        @endif
-
                         <div class="mb-3">
                             <label for="telefone" class="form-label">Telefone</label>
                             <input type="text" class="form-control @error('telefone') is-invalid @enderror" 

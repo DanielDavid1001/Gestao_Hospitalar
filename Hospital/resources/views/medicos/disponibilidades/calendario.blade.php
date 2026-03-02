@@ -2,13 +2,30 @@
 
 @section('content')
 <div class="container py-4">
+    @if(auth()->user()->isAdmin())
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="GET" action="{{ route('medico.disponibilidades.index') }}" class="d-flex gap-2 align-items-center">
+                    <label for="medico_id" class="form-label mb-0">Médico:</label>
+                    <select id="medico_id" name="medico_id" class="form-select" onchange="this.form.submit()">
+                        @foreach(($medicosAdmin ?? []) as $medicoItem)
+                            <option value="{{ $medicoItem->id }}" @selected(($medicoSelecionadoId ?? null) == $medicoItem->id)>
+                                {{ $medicoItem->nome ?? ($medicoItem->user->name ?? ('Médico #' . $medicoItem->id)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <div class="row mb-4">
         <div class="col-md-8">
             <h2><i class="bi bi-calendar"></i> Calendário de Disponibilidades</h2>
             <p class="text-muted">Visualize seus períodos disponíveis em formato de calendário</p>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{{ route('medico.disponibilidades.periodo') }}" class="btn btn-primary">
+            <a href="{{ route('medico.disponibilidades.periodo', auth()->user()->isAdmin() ? ['medico_id' => $medicoSelecionadoId] : []) }}" class="btn btn-primary">
                 <i class="bi bi-calendar-range"></i> Adicionar Período
             </a>
         </div>
@@ -21,6 +38,15 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+
+    <div class="mb-3">
+        <a href="{{ route('medico.disponibilidades.lista', auth()->user()->isAdmin() ? ['medico_id' => $medicoSelecionadoId] : []) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Ver Lista Completa
+        </a>
+        <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
 
     <div class="row">
         <div class="col-md-12">
@@ -87,13 +113,5 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        <a href="{{ route('medico.disponibilidades.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-list"></i> Ver Lista Completa
-        </a>
-        <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
 </div>
 @endsection

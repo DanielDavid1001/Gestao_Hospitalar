@@ -8,7 +8,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Lista de Administradores</span>
                     @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admins.create') }}" class="btn btn-primary btn-sm">
+                        <a href="{{ route('admins.create') }}" class="btn btn-primary btn-sm ms-auto me-1">
                             Novo Administrador
                         </a>
                     @endif

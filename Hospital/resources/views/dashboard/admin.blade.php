@@ -1,56 +1,129 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h2 class="mb-4">Dashboard - Administrador</h2>
-            <p class="text-muted">Bem-vindo, {{ auth()->user()->name }}! Aqui você pode gerenciar todo o sistema.</p>
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-sm-6">
+            <h1 class="mb-0">Dashboard Admin</h1>
+        </div>
+        <div class="col-sm-6 text-end">
+            <span class="text-muted">Bem-vindo, {{ auth()->user()->name }}</span>
         </div>
     </div>
 
-    <!-- Cards de Estatísticas -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Usuários</h5>
-                    <h2 class="card-text">{{ $totalUsuarios }}</h2>
+    <div class="row">
+        <div class="col-lg-4 col-12">
+            <div class="small-box text-bg-primary">
+                <div class="inner">
+                    <h3>{{ $totalAdmins }}</h3>
+                    <p>Total de ADM</p>
+                </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-shield-lock"></i>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Médicos</h5>
-                    <h2 class="card-text">{{ $totalMedicos }}</h2>
+        <div class="col-lg-4 col-12">
+            <div class="small-box text-bg-success">
+                <div class="inner">
+                    <h3>{{ $totalMedicos }}</h3>
+                    <p>Total de Médicos</p>
+                </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-person-badge"></i>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Pacientes</h5>
-                    <h2 class="card-text">{{ $totalPacientes }}</h2>
+        <div class="col-lg-4 col-12">
+            <div class="small-box text-bg-info">
+                <div class="inner">
+                    <h3>{{ $totalPacientes }}</h3>
+                    <p>Total de Pacientes</p>
+                </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-12">
+            <div class="small-box text-bg-warning">
+                <div class="inner">
+                    <h3>{{ $totalConsultas }}</h3>
+                    <p>Total de Consultas</p>
+                </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-12">
+            <div class="small-box text-bg-secondary">
+                <div class="inner">
+                    <h3>{{ $consultasPendentes }}</h3>
+                    <p>Consultas Pendentes</p>
+                </div>
+                <div class="small-box-icon">
+                    <i class="bi bi-hourglass-split"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Médicos Recentes -->
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <span class="font-weight-bold">Médicos Recentes</span>
-                    <a href="{{ route('medicos.index') }}" class="btn btn-sm btn-primary">Ver Todos</a>
+        <div class="col-lg-7">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Status das Consultas</h3>
                 </div>
                 <div class="card-body">
+                    <div class="position-relative" style="height: 280px;">
+                        <canvas id="consultasStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Resumo de Status</h3>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-dot text-warning"></i> Pendentes</span>
+                            <span class="badge text-bg-warning">{{ $consultasPendentes }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-dot text-primary"></i> Confirmadas</span>
+                            <span class="badge text-bg-primary">{{ $consultasConfirmadas }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-dot text-success"></i> Realizadas</span>
+                            <span class="badge text-bg-success">{{ $consultasRealizadas }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-dot text-danger"></i> Canceladas</span>
+                            <span class="badge text-bg-danger">{{ $consultasCanceladas }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card card-outline card-primary">
+                <div class="card-header position-relative d-flex align-items-center pe-2" style="min-height: 64px;">
+                    <h3 class="mb-0 pe-5">Médicos Recentes</h3>
+                    <a href="{{ route('medicos.index') }}" class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center position-absolute top-50 translate-middle-y" style="right: 10px;">Ver Todos</a>
+                </div>
+                <div class="card-body p-0">
                     @if($medicosRecentes->isEmpty())
-                        <p class="text-muted text-center mb-0">Nenhum médico cadastrado</p>
+                        <p class="text-muted text-center py-4 mb-0">Nenhum médico cadastrado</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-sm mb-0">
+                            <table class="table table-striped mb-0">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
@@ -74,19 +147,18 @@
             </div>
         </div>
 
-        <!-- Pacientes Recentes -->
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <span class="font-weight-bold">Pacientes Recentes</span>
-                    <a href="{{ route('pacientes.index') }}" class="btn btn-sm btn-primary">Ver Todos</a>
+        <div class="col-lg-6">
+            <div class="card card-outline card-info">
+                <div class="card-header position-relative d-flex align-items-center pe-2" style="min-height: 64px;">
+                    <h3 class="mb-0 pe-6">Pacientes Recentes</h3>
+                    <a href="{{ route('pacientes.index') }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center justify-content-center position-absolute top-50 translate-middle-y" style="right: 10px;">Ver Todos</a>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     @if($pacientesRecentes->isEmpty())
-                        <p class="text-muted text-center mb-0">Nenhum paciente cadastrado</p>
+                        <p class="text-muted text-center py-4 mb-0">Nenhum paciente cadastrado</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-sm mb-0">
+                            <table class="table table-striped mb-0">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
@@ -111,39 +183,78 @@
         </div>
     </div>
 
-    <!-- Ações Rápidas -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <span class="font-weight-bold">Ações Rápidas</span>
+    <div class="card card-outline card-secondary">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Ações Rápidas</h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <a href="{{ route('medicos.create') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-user-md me-1"></i> Novo Médico
+                    </a>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('medicos.create') }}" class="btn btn-outline-primary btn-block w-100">
-                                <i class="fas fa-user-md mr-2"></i> Novo Médico
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('pacientes.create') }}" class="btn btn-outline-info btn-block w-100">
-                                <i class="fas fa-user-injured mr-2"></i> Novo Paciente
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('medicos.index') }}" class="btn btn-outline-success btn-block w-100">
-                                <i class="fas fa-list mr-2"></i> Listar Médicos
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ route('pacientes.index') }}" class="btn btn-outline-warning btn-block w-100">
-                                <i class="fas fa-list mr-2"></i> Listar Pacientes
-                            </a>
-                        </div>
-                    </div>
+                <div class="col-md-3">
+                    <a href="{{ route('pacientes.create') }}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-user-injured me-1"></i> Novo Paciente
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ route('medicos.index') }}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-list me-1"></i> Listar Médicos
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ route('pacientes.index') }}" class="btn btn-outline-warning w-100">
+                        <i class="fas fa-list me-1"></i> Listar Pacientes
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.Chart) {
+        return;
+    }
+
+    const canvas = document.getElementById('consultasStatusChart');
+
+    if (!canvas) {
+        return;
+    }
+
+    const chartConfig = @json($consultasStatusChart);
+    const css = getComputedStyle(document.documentElement);
+    const themeColors = [
+        css.getPropertyValue('--bs-warning').trim(),
+        css.getPropertyValue('--bs-primary').trim(),
+        css.getPropertyValue('--bs-success').trim(),
+        css.getPropertyValue('--bs-danger').trim(),
+    ];
+
+    new window.Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: chartConfig.labels,
+            datasets: [{
+                data: chartConfig.data,
+                backgroundColor: themeColors,
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+            },
+        },
+    });
+});
+</script>
 @endsection

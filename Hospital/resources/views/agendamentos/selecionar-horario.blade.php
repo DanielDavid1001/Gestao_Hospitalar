@@ -3,9 +3,14 @@
 @section('content')
 <div class="container py-4">
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <h2><i class="bi bi-calendar-event"></i> Selecione um Horário</h2>
             <p class="text-muted">Dr(a). {{ $medico->user->name }} - {{ $medico->especialidade }}</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
         </div>
     </div>
 
@@ -17,13 +22,16 @@
                 </div>
             @else
                 @foreach($disponibilidades as $data => $horarios)
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
+                    <div class="card card-outline card-primary mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0 d-flex justify-content-between align-items-center">
+                                <span>
                                 {{ \Carbon\Carbon::parse($data)->format('d/m/Y') }}
                                 <small class="text-muted">
                                     ({{ \Carbon\Carbon::parse($data)->locale('pt_BR')->dayName }})
                                 </small>
+                                </span>
+                                <span class="badge bg-primary">{{ $horarios->sum('consultas_disponiveis') }} vaga(s)</span>
                             </h6>
                         </div>
                         <div class="card-body">
@@ -31,11 +39,11 @@
                                 @foreach($horarios as $disponibilidade)
                                     <div class="col-md-6 col-lg-4 mb-2">
                                         <a href="{{ route('agendamentos.confirmar', [$medico->id, $data, $disponibilidade->hora_inicio->format('H:i')]) }}" 
-                                           class="btn btn-outline-primary w-100">
+                                           class="btn btn-outline-primary w-100 py-3">
                                             <i class="bi bi-clock"></i>
                                             {{ $disponibilidade->hora_inicio->format('H:i') }} - {{ $disponibilidade->hora_fim->format('H:i') }}
                                             <br>
-                                            <small>{{ ucfirst($disponibilidade->periodo) }}</small>
+                                            <small>{{ ucfirst($disponibilidade->periodo) }} • {{ $disponibilidade->consultas_disponiveis }} vaga(s)</small>
                                         </a>
                                     </div>
                                 @endforeach
@@ -47,8 +55,8 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-light">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Médico</h6>
                 </div>
                 <div class="card-body">
@@ -64,12 +72,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="mt-4">
-        <a href="javascript:history.back()" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
     </div>
 </div>
 @endsection

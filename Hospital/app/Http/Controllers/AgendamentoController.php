@@ -115,12 +115,44 @@ class AgendamentoController extends Controller
         }
 
         $medico = Medico::findOrFail($medico_id);
-        
-        $disponibilidades = MedicoAvailability::where('medico_id', $medico_id)
+
+        $disponibilidadesBase = MedicoAvailability::where('medico_id', $medico_id)
             ->where('data', '>=', now()->toDateString())
             ->orderBy('data')
             ->orderBy('hora_inicio')
-            ->get()
+            ->get();
+
+        $datasDisponiveis = $disponibilidadesBase
+            ->pluck('data')
+            ->map(fn ($data) => Carbon::parse($data)->toDateString());
+
+        $ocupacaoPorSlot = collect();
+
+        if ($datasDisponiveis->isNotEmpty()) {
+            $ocupacaoPorSlot = Agendamento::where('medico_id', $medico_id)
+                ->whereDate('data_hora', '>=', $datasDisponiveis->min())
+                ->whereDate('data_hora', '<=', $datasDisponiveis->max())
+                ->whereIn('status', ['pendente', 'confirmada'])
+                ->get()
+                ->groupBy(function ($agendamento) {
+                    return Carbon::parse($agendamento->data_hora)->format('Y-m-d|H:i');
+                })
+                ->map(fn ($itens) => $itens->count());
+        }
+
+        $disponibilidades = $disponibilidadesBase
+            ->map(function ($item) use ($ocupacaoPorSlot) {
+                $chaveSlot = Carbon::parse($item->data)->format('Y-m-d') . '|' . $item->hora_inicio->format('H:i');
+                $maxConsultas = $this->calcularMaxConsultasDisponibilidade($item);
+                $consultasOcupadas = (int) ($ocupacaoPorSlot[$chaveSlot] ?? 0);
+
+                $item->max_consultas = $maxConsultas;
+                $item->consultas_ocupadas = $consultasOcupadas;
+                $item->consultas_disponiveis = max($maxConsultas - $consultasOcupadas, 0);
+
+                return $item;
+            })
+            ->filter(fn ($item) => $item->consultas_disponiveis > 0)
             ->groupBy(function ($item) {
                 return Carbon::parse($item->data)->toDateString();
             });
@@ -180,9 +212,7 @@ class AgendamentoController extends Controller
             'medico_id' => 'required|exists:medicos,id',
             'data' => 'required|date_format:Y-m-d|after_or_equal:today',
             'hora_inicio' => 'required|date_format:H:i',
-            'nome_paciente' => 'required|string|max:255',
-            'data_nascimento' => 'required|date_format:d/m/Y|before:today',
-            'nome_responsavel' => 'nullable|string|max:255',
+            'confirmar_dados' => 'accepted',
         ], [
             'medico_id.required' => 'Médico é obrigatório',
             'medico_id.exists' => 'Médico inválido',
@@ -191,14 +221,15 @@ class AgendamentoController extends Controller
             'data.after_or_equal' => 'Data não pode ser no passado',
             'hora_inicio.required' => 'Hora é obrigatória',
             'hora_inicio.date_format' => 'Formato de hora inválido (HH:mm)',
-            'nome_paciente.required' => 'Nome do paciente é obrigatório',
-            'data_nascimento.required' => 'Data de nascimento é obrigatória',
-            'data_nascimento.date_format' => 'Formato de data inválido (dd/mm/yyyy)',
-            'data_nascimento.before' => 'Data de nascimento deve ser no passado',
+            'confirmar_dados.accepted' => 'Confirme que os dados do paciente estão corretos para continuar.',
         ]);
 
-        // Converter data de nascimento de dd/mm/yyyy para yyyy-mm-dd
-        $dataNasc = \DateTime::createFromFormat('d/m/Y', $validated['data_nascimento'])->format('Y-m-d');
+        if (!$paciente->data_nascimento) {
+            return redirect()->route('paciente.perfil.edit')
+                ->with('error', 'Complete sua data de nascimento no perfil antes de agendar a consulta.');
+        }
+
+        $data_hora = Carbon::createFromFormat('Y-m-d H:i', $validated['data'] . ' ' . $validated['hora_inicio']);
 
         // Verificar se a disponibilidade existe
         $disponibilidade = MedicoAvailability::where('medico_id', $validated['medico_id'])
@@ -211,17 +242,29 @@ class AgendamentoController extends Controller
                 ->with('error', 'Disponibilidade não encontrada ou já foi agendada.');
         }
 
-        try {
-            $data_hora = Carbon::createFromFormat('Y-m-d H:i', $validated['data'] . ' ' . $validated['hora_inicio']);
+        // Bloqueia conflito de agendamento no mesmo slot (médico + data/hora)
+        $slotJaReservado = Agendamento::where('medico_id', $validated['medico_id'])
+            ->where('data_hora', $data_hora)
+            ->whereIn('status', ['pendente', 'confirmada'])
+            ->count();
 
+        $maxConsultas = $this->calcularMaxConsultasDisponibilidade($disponibilidade);
+
+        if ($slotJaReservado >= $maxConsultas) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Este horário atingiu o limite de consultas possíveis. Escolha outro horário disponível.');
+        }
+
+        try {
             // Criar agendamento
             Agendamento::create([
                 'paciente_id' => $paciente->id,
                 'medico_id' => $validated['medico_id'],
                 'data_hora' => $data_hora,
-                'nome_paciente' => $validated['nome_paciente'],
-                'data_nascimento' => $dataNasc,
-                'nome_responsavel' => $validated['nome_responsavel'],
+                'nome_paciente' => $paciente->user->name,
+                'data_nascimento' => $paciente->data_nascimento,
+                'nome_responsavel' => null,
                 'status' => 'pendente',
             ]);
 
@@ -234,52 +277,186 @@ class AgendamentoController extends Controller
         }
     }
 
+    private function calcularMaxConsultasDisponibilidade(MedicoAvailability $disponibilidade): int
+    {
+        $inicio = Carbon::createFromFormat('H:i', $disponibilidade->hora_inicio->format('H:i'));
+        $fim = Carbon::createFromFormat('H:i', $disponibilidade->hora_fim->format('H:i'));
+
+        if ($fim->lessThanOrEqualTo($inicio)) {
+            $fim->addDay();
+        }
+
+        $duracaoMinutos = $inicio->diffInMinutes($fim);
+        $intervaloConsultaMinutos = max((int) config('medical.consulta_intervalo_minutos', 30), 1);
+
+        return max((int) floor($duracaoMinutos / $intervaloConsultaMinutos), 1);
+    }
+
     /**
-     * Listar agendamentos do paciente
+     * Listar agendamentos por perfil
      */
     public function meus()
     {
         $user = Auth::user();
-        $paciente = $user->paciente;
 
-        if (!$paciente) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Perfil de paciente não encontrado.');
+        if ($user->isPaciente()) {
+            $paciente = $user->paciente;
+
+            if (!$paciente) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Perfil de paciente não encontrado.');
+            }
+
+            $agendamentos = Agendamento::where('paciente_id', $paciente->id)
+                ->with('medico.user')
+                ->orderBy('data_hora', 'desc')
+                ->paginate(10);
+
+            return view('agendamentos.meus', compact('agendamentos'));
         }
 
-        $agendamentos = Agendamento::where('paciente_id', $paciente->id)
-            ->with('medico')
-            ->orderBy('data_hora', 'desc')
-            ->paginate(10);
+        if ($user->isMedico()) {
+            $medico = $user->medico;
 
-        return view('agendamentos.meus', compact('paciente', 'agendamentos'));
+            if (!$medico) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Perfil de médico não encontrado.');
+            }
+
+            $agendamentos = Agendamento::where('medico_id', $medico->id)
+                ->with('paciente.user', 'medico.user')
+                ->orderBy('data_hora', 'desc')
+                ->paginate(10);
+
+            return view('agendamentos.meus', compact('agendamentos'));
+        }
+
+        if ($user->isAdmin()) {
+            $agendamentos = Agendamento::with('paciente.user', 'medico.user')
+                ->orderBy('data_hora', 'desc')
+                ->paginate(10);
+
+            return view('agendamentos.meus', compact('agendamentos'));
+        }
+
+        return redirect()->route('dashboard')
+            ->with('error', 'Você não tem permissão para acessar este recurso.');
     }
 
     /**
-     * Cancelar agendamento
+     * Confirmar consulta (marcar como confirmada)
+     */
+    public function validar($id)
+    {
+        $user = Auth::user();
+        $agendamento = Agendamento::findOrFail($id);
+
+        if (!$user->isMedico()) {
+            return redirect()->back()
+                ->with('error', 'Apenas médico pode confirmar consultas.');
+        }
+
+        $medico = $user->medico;
+
+        if (!$medico || $agendamento->medico_id !== $medico->id) {
+            return redirect()->back()
+                ->with('error', 'Você não tem permissão para confirmar esta consulta.');
+        }
+
+        if ($agendamento->status !== 'pendente') {
+            return redirect()->back()
+                ->with('error', 'Apenas consultas pendentes podem ser confirmadas.');
+        }
+
+        if ($agendamento->data_hora <= now()) {
+            return redirect()->back()
+                ->with('error', 'A confirmação deve ser feita antes do horário da consulta.');
+        }
+
+        $agendamento->update(['status' => 'confirmada']);
+
+        return redirect()->back()
+            ->with('success', 'Consulta confirmada com sucesso.');
+    }
+
+    /**
+     * Finalizar consulta (marcar como realizada)
+     */
+    public function finalizar($id)
+    {
+        $user = Auth::user();
+        $agendamento = Agendamento::findOrFail($id);
+
+        if (!$user->isMedico()) {
+            return redirect()->back()
+                ->with('error', 'Apenas médico pode finalizar consultas.');
+        }
+
+        $medico = $user->medico;
+
+        if (!$medico || $agendamento->medico_id !== $medico->id) {
+            return redirect()->back()
+                ->with('error', 'Você não tem permissão para finalizar esta consulta.');
+        }
+
+        if ($agendamento->status !== 'confirmada') {
+            return redirect()->back()
+                ->with('error', 'Apenas consultas confirmadas podem ser finalizadas.');
+        }
+
+        $agendamento->update(['status' => 'realizada']);
+
+        return redirect()->back()
+            ->with('success', 'Consulta finalizada com sucesso.');
+    }
+
+    /**
+     * Marcar consulta como não realizada
+     */
+    public function naoRealizada($id)
+    {
+        $user = Auth::user();
+        $agendamento = Agendamento::findOrFail($id);
+
+        if (!$user->isMedico()) {
+            return redirect()->back()
+                ->with('error', 'Apenas médico pode marcar consulta como não realizada.');
+        }
+
+        $medico = $user->medico;
+
+        if (!$medico || $agendamento->medico_id !== $medico->id) {
+            return redirect()->back()
+                ->with('error', 'Você não tem permissão para alterar esta consulta.');
+        }
+
+        if ($agendamento->status !== 'confirmada') {
+            return redirect()->back()
+                ->with('error', 'Apenas consultas confirmadas podem ser marcadas como não realizadas.');
+        }
+
+        $agendamento->update(['status' => 'nao_realizada']);
+
+        return redirect()->back()
+            ->with('success', 'Consulta marcada como não realizada.');
+    }
+
+    /**
+     * Excluir/cancelar agendamento
      */
     public function destroy($id)
     {
         $user = Auth::user();
-        $paciente = $user->paciente;
-
-        if (!$paciente) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Perfil de paciente não encontrado.');
-        }
-
         $agendamento = Agendamento::findOrFail($id);
 
-        // Verificar se o agendamento pertence ao paciente
-        if ($agendamento->paciente_id !== $paciente->id) {
+        if (!$user->isAdmin()) {
             return redirect()->back()
-                ->with('error', 'Você não tem permissão para cancelar este agendamento.');
+                ->with('error', 'Apenas administrador pode cancelar consultas.');
         }
 
-        // Só permite cancelar consultas futuras e com status pendente ou confirmada
         if ($agendamento->data_hora <= now() || !in_array($agendamento->status, ['pendente', 'confirmada'])) {
             return redirect()->back()
-                ->with('error', 'Este agendamento não pode ser cancelado.');
+                ->with('error', 'Este agendamento não pode ser excluído.');
         }
 
         $agendamento->update(['status' => 'cancelada']);
