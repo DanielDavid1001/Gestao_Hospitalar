@@ -8,7 +8,7 @@
             <p class="text-muted">Dr(a). {{ $medico->user->name }} - {{ $medico->especialidade }}</p>
         </div>
         <div class="col-md-4 text-md-end mt-2 mt-md-0">
-            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+            <a href="{{ route('agendamentos.por-profissional') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Voltar
             </a>
         </div>

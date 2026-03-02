@@ -18,6 +18,9 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // Debug: Log user role
+        \Log::info('Dashboard Access - User Role: ' . ($user->role ?? 'NULL'));
+
         // Redireciona para o dashboard específico de cada role
         if ($user->isAdmin()) {
             return $this->dashboardAdmin();
@@ -27,6 +30,7 @@ class DashboardController extends Controller
             return $this->dashboardPaciente();
         }
 
+        \Log::error('Dashboard - Role não identificado: ' . ($user->role ?? 'NULL'));
         return redirect()->route('login');
     }
 

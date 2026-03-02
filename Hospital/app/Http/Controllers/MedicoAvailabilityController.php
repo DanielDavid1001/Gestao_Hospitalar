@@ -54,7 +54,7 @@ class MedicoAvailabilityController extends Controller
         $disponibilidades = MedicoAvailability::where('medico_id', $medico->id)
             ->orderBy('data')
             ->orderBy('hora_inicio')
-            ->paginate(15);
+            ->paginate(6);
 
         return view('medicos.disponibilidades.index', compact('medico', 'disponibilidades', 'medicosAdmin', 'medicoSelecionadoId'));
     }
@@ -232,13 +232,16 @@ class MedicoAvailabilityController extends Controller
 
         $periodos = ['manhã', 'tarde', 'noite'];
         
-        // Pega disponibilidades do próximo mês
+        // Pega somente os 3 próximos períodos disponíveis
         $disponibilidades = MedicoAvailability::where('medico_id', $medico->id)
             ->futuros()
+            ->orderBy('data')
+            ->orderBy('hora_inicio')
             ->get()
             ->groupBy(function ($disponibilidade) {
                 return Carbon::parse($disponibilidade->data)->format('Y-m-d');
-            });
+            })
+            ->take(3);
 
         return view('medicos.disponibilidades.calendario', compact('medico', 'periodos', 'disponibilidades', 'medicosAdmin', 'medicoSelecionadoId'));
     }

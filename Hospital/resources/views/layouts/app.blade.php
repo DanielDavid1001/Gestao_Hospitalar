@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+<body class="{{ request()->routeIs('login') || request()->routeIs('register') ? 'auth-page' : 'layout-fixed sidebar-expand-lg bg-body-tertiary' }}">
     <div class="app-wrapper">
         @auth
             <nav class="app-header navbar navbar-expand bg-body">
@@ -32,9 +32,9 @@
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                                 <span class="d-none d-md-inline">{{ Auth::user()->name }}</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                                <li class="user-footer d-flex justify-content-end p-2">
-                                    <a class="btn btn-default btn-flat" href="{{ route('logout') }}"
+                            <ul class="dropdown-menu dropdown-menu-end p-0" style="width: auto !important; min-width: 0 !important;">
+                                <li class="p-1 text-center">
+                                    <a class="dropdown-item text-center py-1" style="white-space: nowrap;" href="{{ route('logout') }}"
                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
@@ -153,20 +153,24 @@
                 </div>
             </main>
         @else
-            <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-                <div class="container">
-                    <a class="navbar-brand" href="{{ url('/') }}">{{ config('app.name', 'Laravel') }}</a>
-                    <div class="collapse navbar-collapse">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">{{ __('Login') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url('/register') }}">{{ __('Register') }}</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-            <main class="py-4">
+            @if(request()->routeIs('login') || request()->routeIs('register'))
                 @yield('content')
-            </main>
+            @else
+                <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+                    <div class="container">
+                        <a class="navbar-brand" href="{{ url('/') }}">{{ config('app.name', 'Laravel') }}</a>
+                        <div class="collapse navbar-collapse">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">{{ __('Login') }}</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url('/register') }}">{{ __('Register') }}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                <main class="py-4">
+                    @yield('content')
+                </main>
+            @endif
         @endauth
 
         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">

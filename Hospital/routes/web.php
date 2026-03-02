@@ -9,9 +9,7 @@ use App\Http\Controllers\MedicoAvailabilityController;
 use App\Http\Controllers\AgendamentoController;
 use App\Http\Controllers\DashboardController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/login');
 
 Auth::routes();
 
