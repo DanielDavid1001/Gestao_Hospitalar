@@ -246,6 +246,19 @@ class AgendamentoController extends Controller
 
         \Log::info('Data hora criada: ' . $data_hora);
 
+        // Verificar se já existe agendamento duplicado para este paciente
+        $agendamentoDuplicado = Agendamento::where('paciente_id', $paciente->id)
+            ->where('medico_id', $validated['medico_id'])
+            ->where('data_hora', $data_hora)
+            ->whereIn('status', ['pendente', 'confirmada', 'realizada'])
+            ->exists();
+
+        if ($agendamentoDuplicado) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Você já possui um agendamento com este médico neste horário.');
+        }
+
         // Verificar se a disponibilidade existe
         $disponibilidades = MedicoAvailability::where('medico_id', $validated['medico_id'])->get();
         
